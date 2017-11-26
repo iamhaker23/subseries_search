@@ -353,7 +353,8 @@ Result* subseriesMatching_log_mem_optimisation_6(Series* lookingFor, SeriesList*
     int memoryUsage = (inSeriesList->length * sizeof(SNode)) + (inSeriesList->length * inSeriesList->first->series->length * sizeof(Element));
   
     printf("Memory: %d\n", memoryUsage);
-    fprintf(log, "Memory: %d\n", memoryUsage);
+    fprintf(log, "%d,6\n", memoryUsage);
+    
     
     float lowestDistance = FLT_MAX;
     int seriesIndex = -1;
@@ -410,7 +411,8 @@ Result* subseriesMatching_log_mem_optimisation_6(Series* lookingFor, SeriesList*
     memoryUsage = (inSeriesList->length * sizeof(SNode)) + (inSeriesList->length * inSeriesList->first->series->length * sizeof(Element));
             
     printf("Memory: %d\n", memoryUsage);
-    fprintf(log, "Memory: %d\n", memoryUsage);
+    fprintf(log, "%d,6\n", memoryUsage);
+    
     
     return result;
 }
@@ -421,7 +423,7 @@ Result* subseriesMatching_log_mem(Series* lookingFor, SeriesList* inSeriesList, 
     int memoryUsage = (inSeriesList->length * sizeof(SNode)) + (inSeriesList->length * inSeriesList->first->series->length * sizeof(Element));
   
     printf("Memory: %d\n", memoryUsage);
-    fprintf(log, "Memory: %d\n", memoryUsage);
+    fprintf(log, "%d,0\n", memoryUsage);
     
     float lowestDistance = FLT_MAX;
     int seriesIndex = -1;
@@ -469,7 +471,7 @@ Result* subseriesMatching_log_mem(Series* lookingFor, SeriesList* inSeriesList, 
     memoryUsage = (inSeriesList->length * sizeof(SNode)) + (inSeriesList->length * inSeriesList->first->series->length * sizeof(Element));
             
     printf("Memory: %d\n", memoryUsage);
-    fprintf(log, "Memory: %d\n", memoryUsage);
+    fprintf(log, "%d,0\n", memoryUsage);
     
     return result;
 }

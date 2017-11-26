@@ -178,7 +178,7 @@ void main() {
     FILE* log = NULL;
     
     //char mode = 'a';
-    char mode = 'd';
+    char mode = 'e';
     
     const int LIST_UPPER_LIMIT = 3000;
     const int LIST_STEP = 500;
@@ -220,7 +220,7 @@ void main() {
             MAX_RANDOM_VALUE = 2500;
             int k = 1;
             
-            for (int n = 0; n < 3500; n=n+1000){
+            for (int n = 0; n < 2000; n=n+500){
 
                 //if n < k, then just use the value of k for that run (e.g. the minimum length the list of series can be, given length of the subseries to match).
                 doOptimisationComparison((n<k)? k:n, k, log);
@@ -302,7 +302,7 @@ void main() {
         case 'd':
             
             log = fopen("subseries_search_timing_experiment.csv", "w");
-            fprintf(log, "n,k,memory,distance,algo\r\n");
+            fprintf(log, "memory,algo\r\n");
             
             specialCaseN = 1000;
             specialCaseK = 40;
