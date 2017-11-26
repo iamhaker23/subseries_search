@@ -64,6 +64,7 @@ extern "C" {
     void appendToSeries(int value, Series* series);
     Series* sliceSeries(Series* series, int start, int end);
     SNode* getSNode(int index, SeriesList* seriesList);
+    void removeSNode(int index, SeriesList* seriesList);
     
     SeriesList* newSeriesList();
     void appendToSeriesList(Series* series, SeriesList* seriesList);
@@ -78,6 +79,9 @@ extern "C" {
     int seriesListContains(SeriesList* list, Series* series);
     
     void freeSeriesList(SeriesList* list);
+    
+    Series* duplicateSeries(Series* series);
+    SeriesList* duplicateSeriesList(SeriesList* series);
     
     SeriesList* getShortestDeltaSeries(SeriesList* cache, Series* givenSubSeries, Series* lookingFor);
     

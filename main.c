@@ -133,26 +133,18 @@ void doOptimisationComparison(int n, int k, FILE* log){
         fprintf(log, "%d,%d,%lf,%lf,%d\r\n", n, k, duration, result->distance, 2);
         fflush(log);
     
-    /*start = clock();
-    result = subseriesMatching_w_optimisation_3(lookingFor, list);
-    end = clock();
-    duration = (double)(end - start) / (double)CLOCKS_PER_SEC;
-    
-    printf("n=%d,k=%d,duration=%lf,distance=%lf,algo=%d\n", n, k, duration, result->distance, 3);
-    fprintf(log, "%d,%d,%lf,%lf,%d\r\n", n, k, duration, result->distance, 3);
-    fflush(log);*/
-    
     start = clock();
-    result = subseriesMatching_w_optimisation_4(lookingFor, list);
+    result = subseriesMatching_w_optimisation_4(lookingFor, list, NULL);
     end = clock();
     duration = (double)(end - start) / (double)CLOCKS_PER_SEC;
+    SeriesList* bakedCache = result->cache;
     
     printf("n=%d,k=%d,duration=%lf,distance=%lf,algo=%d\n", n, k, duration, result->distance, 4);
     fprintf(log, "%d,%d,%lf,%lf,%d\r\n", n, k, duration, result->distance, 4);
     fflush(log);
     
         start = clock();
-        result = subseriesMatching_w_optimisation_4(lookingFor, list);
+        result = subseriesMatching_w_optimisation_4(lookingFor, list, bakedCache);
         end = clock();
         duration = (double)(end - start) / (double)CLOCKS_PER_SEC;
 
@@ -161,7 +153,16 @@ void doOptimisationComparison(int n, int k, FILE* log){
         fflush(log);
         
         start = clock();
-        result = subseriesMatching_w_optimisation_4(lookingFor, list);
+        result = subseriesMatching_w_optimisation_4(lookingFor, list, bakedCache);
+        end = clock();
+        duration = (double)(end - start) / (double)CLOCKS_PER_SEC;
+
+        printf("n=%d,k=%d,duration=%lf,distance=%lf,algo=%d\n", n, k, duration, result->distance, 4);
+        fprintf(log, "%d,%d,%lf,%lf,%d\r\n", n, k, duration, result->distance, 4);
+        fflush(log);
+        
+        start = clock();
+        result = subseriesMatching_w_optimisation_4(lookingFor, list, bakedCache);
         end = clock();
         duration = (double)(end - start) / (double)CLOCKS_PER_SEC;
 
@@ -177,12 +178,18 @@ void main() {
     FILE* log = NULL;
     
     //char mode = 'a';
-    char mode = 'b';
+    char mode = 'd';
     
     const int LIST_UPPER_LIMIT = 3000;
     const int LIST_STEP = 500;
     const int TARGET_SERIES_LIMIT = 10;
     const int TARGET_SERIES_STEP = 2;
+    
+    clock_t start, end;
+    double duration;
+    Result* result;
+    Series* lookingFor;
+    SeriesList* list;
     
     switch(mode){
         case 'a':
@@ -238,11 +245,9 @@ void main() {
 
             printf("Generated random input: looking for %dB in series list %dMB\n", (lookingFor->length * sizeof(Element)), (list->length*list->length*sizeof(SNode))/(1024*1024));
             
-            clock_t start, end;
-            double duration;
 
             start = clock();
-            Result* result = subseriesMatching(lookingFor, list);
+            result = subseriesMatching(lookingFor, list);
             end = clock();
             duration = (double)(end - start) / (double)CLOCKS_PER_SEC;
 
@@ -251,7 +256,7 @@ void main() {
             fflush(log);
 
             start = clock();
-            result = subseriesMatching_w_optimisation_4(lookingFor, list);
+            result = subseriesMatching_w_optimisation_4(lookingFor, list, NULL);
             end = clock();
             duration = (double)(end - start) / (double)CLOCKS_PER_SEC;
 
@@ -260,6 +265,7 @@ void main() {
             fflush(log);
             
             //regenerate the search list and use the baked cache
+            SeriesList* bakedCache = result->cache;
             
             freeSeriesList(list);
             SeriesList* list2 = newSeriesList();
@@ -275,12 +281,21 @@ void main() {
             fflush(log);
             
             start = clock();
-            result = subseriesMatching_w_optimisation_4(lookingFor, list2);
+            result = subseriesMatching_w_optimisation_4(lookingFor, list2, bakedCache);
             end = clock();
             duration = (double)(end - start) / (double)CLOCKS_PER_SEC;
 
             printf("n=%d,k=%d,duration=%lf,distance=%lf,algo=%d,result=%d:%d:%d\n", specialCaseN, specialCaseK, duration, result->distance, 4, result->seriesIndex, result->startOfSequenceIndex, result->lengthOfMatch);
             fprintf(log, "%d,%d,%lf,%lf,%d\r\n", specialCaseN, specialCaseK, duration, result->distance, 4);
+            fflush(log);
+            
+            start = clock();
+            result = subseriesMatching_w_optimisation_3(lookingFor, list2);
+            end = clock();
+            duration = (double)(end - start) / (double)CLOCKS_PER_SEC;
+
+            printf("n=%d,k=%d,duration=%lf,distance=%lf,algo=%d\n", specialCaseN, specialCaseK, duration, result->distance, 3);
+            fprintf(log, "%d,%d,%lf,%lf,%d\r\n", specialCaseN, specialCaseK, duration, result->distance, 3);
             fflush(log);
             
             break;
@@ -295,6 +310,7 @@ void main() {
             list = newSeriesList();
             //populates list as an n*n list of series
             randomlyPopulateSeriesList(specialCaseN, list);
+            list2 = duplicateSeriesList(list);
             lookingFor = newSeries();
             randomlyPopulateSeries(specialCaseK, lookingFor);
 
@@ -309,11 +325,48 @@ void main() {
             printf("n=%d,k=%d,duration=%lf,distance=%lf,algo=%d\n", specialCaseN, specialCaseK, duration, result->distance, 0);
 
             start = clock();
-            result = subseriesMatching_log_mem_optimisation_6(lookingFor, list, log);
+            result = subseriesMatching_log_mem_optimisation_6(lookingFor, list2, log);
             end = clock();
             duration = (double)(end - start) / (double)CLOCKS_PER_SEC;
 
-            printf("n=%d,k=%d,duration=%lf,distance=%lf,algo=%d\n", specialCaseN, specialCaseK, duration, result->distance, 4);
+            printf("n=%d,k=%d,duration=%lf,distance=%lf,algo=%d\n", specialCaseN, specialCaseK, duration, result->distance, 6);
+            
+            break;
+        case 'e':
+            //Fails to show time-complexity improvement by attempting to reduce the candidate set size on each iteration
+            
+            log = fopen("subseries_search_timing_experiment.csv", "w");
+            fprintf(log, "n,k,duration,distance,algo\r\n");
+            
+            int specialCaseN3 = 1000;
+            int specialCaseK3 = 1;
+            MAX_RANDOM_VALUE = 5000;
+            
+            list = newSeriesList();
+            //populates list as an n*n list of series
+            randomlyPopulateSeriesList(specialCaseN3, list);
+            lookingFor = newSeries();
+            randomlyPopulateSeries(specialCaseK3, lookingFor);
+
+            printf("Generated random input: looking for %dB in series list %dMB\n", (lookingFor->length * sizeof(Element)), (list->length*list->length*sizeof(SNode))/(1024*1024));
+            
+            start = clock();
+            result = subseriesMatching(lookingFor, list);
+            end = clock();
+            duration = (double)(end - start) / (double)CLOCKS_PER_SEC;
+
+            printf("n=%d,k=%d,duration=%lf,distance=%lf,algo=%d,result=%d:%d:%d\n", specialCaseN3, specialCaseK3, duration, result->distance, 0, result->seriesIndex, result->startOfSequenceIndex, result->lengthOfMatch);
+            fprintf(log, "%d,%d,%lf,%lf,%d\r\n", specialCaseN3, specialCaseK3, duration, result->distance, 0);
+            fflush(log);
+
+            start = clock();
+            result = subseriesMatching_w_optimisation_3(lookingFor, list);
+            end = clock();
+            duration = (double)(end - start) / (double)CLOCKS_PER_SEC;
+
+            printf("n=%d,k=%d,duration=%lf,distance=%lf,algo=%d\n", specialCaseN3, specialCaseK3, duration, result->distance, 3);
+            fprintf(log, "%d,%d,%lf,%lf,%d\r\n", specialCaseN3, specialCaseK3, duration, result->distance, 3);
+            fflush(log);
             
             break;
         default:

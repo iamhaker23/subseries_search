@@ -40,6 +40,29 @@ SNode* getSNode(int index, SeriesList* seriesList){
     return NULL;
 }
 
+void removeSNode(int index, SeriesList* seriesList){
+    SNode* curr = seriesList->first;
+    
+    while (curr != NULL){
+        if (curr->index == index){
+            Element* current = curr->series->first;
+            while(current != NULL){
+                Element* next = current->next;
+                free(current);
+                current=next;
+            }
+            free(curr);
+            seriesList->length = seriesList->length -1;
+            return;
+        }else{
+            curr = curr->next;
+        }
+    }
+    
+    fprintf(stderr, "Fatal Error: failed to remove Series #%d from Series List of length %d\n", index, seriesList->length);
+    exit(EXIT_FAILURE);
+}
+
 Series* newSeries(){
     Series* newObj = (Series*)malloc(sizeof(Series));
     
@@ -290,7 +313,8 @@ SeriesList* getShortestDeltaSeries(SeriesList* cache, Series* givenSubSeries, Se
         return smallest;
     }else{
         smallest = newSeriesList();
-        Element* currentElement = getSNode(indexOfClosest, cache)->series->first;
+        SNode* bestCandidate = getSNode(indexOfClosest, cache);
+        Element* currentElement = bestCandidate->series->first;
         while(currentElement!= NULL){
             
             int correspondingValue = getElement(currentElement->index, givenSubSeries)->value;
@@ -303,7 +327,29 @@ SeriesList* getShortestDeltaSeries(SeriesList* cache, Series* givenSubSeries, Se
         }
         appendToSeriesList(deltaSeries, smallest);
         appendToSeriesList(deltaTarget, smallest);
+        smallest->first->distance = bestCandidate->distance;
         return smallest;
     }
     
 }
+
+Series* duplicateSeries(Series* series){
+    Series* copy = newSeries();
+    Element* current = series->first;
+    while(current != NULL){
+        appendToSeries(current->value, copy);
+        current = current->next;
+    }
+    return copy;
+}
+
+SeriesList* duplicateSeriesList(SeriesList* list){
+    SeriesList* copy = newSeriesList();
+    SNode* current = list->first;
+    while(current != NULL){
+        appendToSeriesList(duplicateSeries(current->series), copy);
+        current = current->next;
+    }
+    return copy;
+}
+    

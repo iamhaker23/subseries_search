@@ -286,9 +286,6 @@ Result* subseriesMatching_w_optimisation_4(Series* lookingFor, SeriesList* inSer
     //So n is used interchangeably for limits of inSeriesList and inSeriesList elements
     int n = inSeriesList->length;
     
-    float lowestCached = FLT_MAX;
-    int deltaUsage = 0;
-    
     if (n >= k){
         for (int i = 0; i < n; i++){
         
@@ -300,18 +297,13 @@ Result* subseriesMatching_w_optimisation_4(Series* lookingFor, SeriesList* inSer
                 
                 double currentDistance = FLT_MAX;                
                 
-                //Get shortest "delta series" and corresponding "delta target"
-
-                //Remove the overhead when there is low likelihood of usefulness
                 SeriesList* deltas = NULL;
                 
-                if ((givenCache == 1) && lowestCached <= lowestDistance){// && ((deltas = getShortestDeltaSeries(cache, currentSubseries, lookingFor)) &&  (deltas != NULL && deltas->first->distance < lowestDistance && deltas->first->series->length < lookingFor->length))){
-                    //if the delta has a chance to produce a smaller value for lower cost
-                    deltaUsage = deltaUsage + 1;
+                if ((givenCache == 1)){// && ((deltas = getShortestDeltaSeries(cache, currentSubseries, lookingFor)) &&  (deltas != NULL && deltas->first->distance < lowestDistance && deltas->first->series->length < lookingFor->length))){
+                    
                     deltas = getShortestDeltaSeries(cache, currentSubseries, lookingFor);
-                    lowestCached = (deltas == NULL) ? lowestCached : deltas->first->distance;
                     currentDistance = deltas->first->distance + distance(deltas->first->series, deltas->last->series);
-                    cacheSeries(currentSubseries, currentDistance, cache);
+                    //printf("%lf -> %lf\n", deltas->first->distance, currentDistance);
                 }else{
                     //original code
                     currentDistance = distance(lookingFor, currentSubseries);
@@ -337,6 +329,7 @@ Result* subseriesMatching_w_optimisation_4(Series* lookingFor, SeriesList* inSer
                     seriesIndex = i;
                     subseriesStart = j;
                 }
+                
             }
         }
     }else{
@@ -348,21 +341,19 @@ Result* subseriesMatching_w_optimisation_4(Series* lookingFor, SeriesList* inSer
     result->lengthOfMatch = lookingFor->length;
     result->seriesIndex = seriesIndex;
     result->startOfSequenceIndex = subseriesStart;
-    
+    result->cache = cache;
     
     return result;
 }
 
 Result* subseriesMatching_log_mem_optimisation_6(Series* lookingFor, SeriesList* inSeriesList, FILE* log){
 
-    exit(EXIT_FAILURE);
-}
-
-Result* subseriesMatching_log_mem(Series* lookingFor, SeriesList* inSeriesList, FILE* log){
     Result* result = (Result*)malloc(sizeof(Result));
-    int memoryUsage = 0;
-    printf("%d\n", sizeof(result));
-    printf("%d\n", sizeof(&result));
+    
+    int memoryUsage = (inSeriesList->length * sizeof(SNode)) + (inSeriesList->length * inSeriesList->first->series->length * sizeof(Element));
+  
+    printf("Memory: %d\n", memoryUsage);
+    fprintf(log, "Memory: %d\n", memoryUsage);
     
     float lowestDistance = FLT_MAX;
     int seriesIndex = -1;
@@ -376,8 +367,76 @@ Result* subseriesMatching_log_mem(Series* lookingFor, SeriesList* inSeriesList, 
         for (int i = 0; i < n; i++){
         
             Series* originalSeries = getSNode(i, inSeriesList)->series;
+            
             for (int j = 0; j < (n+1)-k; j++){
+                //-1 from k because of zero-indexing
+                Series* currentSubseries = sliceSeries(originalSeries, j, j+(k-1));
                 
+                double currentDistance = distance(lookingFor, currentSubseries);
+                
+                if (currentDistance < lowestDistance){
+                    lowestDistance = currentDistance;
+                    seriesIndex = i;
+                    subseriesStart = j;
+                }else if (currentDistance == lowestDistance){
+                    //handle tie
+                    lowestDistance = currentDistance;
+                    seriesIndex = i;
+                    subseriesStart = j;
+                }
+                free(currentSubseries);
+            }
+            
+        }
+    }else{
+        fprintf(stderr, "Cannot find match for subseries length %d in series length %d.\n", k, n);
+        exit(EXIT_FAILURE);
+    }
+    
+    SNode* current = inSeriesList->first;
+    while(current!=NULL){
+        SNode* next = current->next;
+        if (current->index != seriesIndex){
+            removeSNode(current->index, inSeriesList);
+        }
+        current=next;
+    }
+    
+    result->distance = lowestDistance;
+    result->lengthOfMatch = lookingFor->length;
+    result->seriesIndex = seriesIndex;
+    result->startOfSequenceIndex = subseriesStart;
+
+    memoryUsage = (inSeriesList->length * sizeof(SNode)) + (inSeriesList->length * inSeriesList->first->series->length * sizeof(Element));
+            
+    printf("Memory: %d\n", memoryUsage);
+    fprintf(log, "Memory: %d\n", memoryUsage);
+    
+    return result;
+}
+
+Result* subseriesMatching_log_mem(Series* lookingFor, SeriesList* inSeriesList, FILE* log){
+    Result* result = (Result*)malloc(sizeof(Result));
+    
+    int memoryUsage = (inSeriesList->length * sizeof(SNode)) + (inSeriesList->length * inSeriesList->first->series->length * sizeof(Element));
+  
+    printf("Memory: %d\n", memoryUsage);
+    fprintf(log, "Memory: %d\n", memoryUsage);
+    
+    float lowestDistance = FLT_MAX;
+    int seriesIndex = -1;
+    int subseriesStart = -1;
+    int k = lookingFor->length;
+    //Assumes a square series list (e.g. n series, each of n length)
+    //So n is used interchangeably for limits of inSeriesList and inSeriesList elements
+    int n = inSeriesList->length;
+    
+    if (n >= k){
+        for (int i = 0; i < n; i++){
+        
+            Series* originalSeries = getSNode(i, inSeriesList)->series;
+            
+            for (int j = 0; j < (n+1)-k; j++){
                 //-1 from k because of zero-indexing
                 Series* currentSubseries = sliceSeries(originalSeries, j, j+(k-1));
                 
@@ -407,5 +466,10 @@ Result* subseriesMatching_log_mem(Series* lookingFor, SeriesList* inSeriesList, 
     result->seriesIndex = seriesIndex;
     result->startOfSequenceIndex = subseriesStart;
 
+    memoryUsage = (inSeriesList->length * sizeof(SNode)) + (inSeriesList->length * inSeriesList->first->series->length * sizeof(Element));
+            
+    printf("Memory: %d\n", memoryUsage);
+    fprintf(log, "Memory: %d\n", memoryUsage);
+    
     return result;
 }

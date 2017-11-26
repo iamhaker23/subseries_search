@@ -26,6 +26,7 @@ extern "C" {
         int startOfSequenceIndex;
         int lengthOfMatch;
         double distance;
+        SeriesList* cache;
     } Result;
 
     Result* subseriesMatching(Series* lookingFor, SeriesList* inSeriesList);
@@ -36,7 +37,7 @@ extern "C" {
     Result* subseriesMatching_w_optimisation_1(Series* lookingFor, SeriesList* inSeriesList);
     Result* subseriesMatching_w_optimisation_2(Series* lookingFor, SeriesList* inSeriesList);
     Result* subseriesMatching_w_optimisation_3(Series* lookingFor, SeriesList* inSeriesList);
-    Result* subseriesMatching_w_optimisation_4(Series* lookingFor, SeriesList* inSeriesList);
+    Result* subseriesMatching_w_optimisation_4(Series* lookingFor, SeriesList* inSeriesList, SeriesList* bakedCache);
     
     double distance(Series* a, Series* b);
     double distance_w_optimisation_1(Series* a, Series* b);
