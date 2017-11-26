@@ -14,6 +14,9 @@
 #ifndef SUBSERIESMATCHER_H
 #define SUBSERIESMATCHER_H
 
+#include "series.h"
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,7 +29,17 @@ extern "C" {
     } Result;
 
     Result* subseriesMatching(Series* lookingFor, SeriesList* inSeriesList);
+    
+    Result* subseriesMatching_log_mem(Series* lookingFor, SeriesList* inSeriesList, FILE* log);
+    Result* subseriesMatching_log_mem_optimisation_6(Series* lookingFor, SeriesList* inSeriesList, FILE* log);
+    
+    Result* subseriesMatching_w_optimisation_1(Series* lookingFor, SeriesList* inSeriesList);
+    Result* subseriesMatching_w_optimisation_2(Series* lookingFor, SeriesList* inSeriesList);
+    Result* subseriesMatching_w_optimisation_3(Series* lookingFor, SeriesList* inSeriesList);
+    Result* subseriesMatching_w_optimisation_4(Series* lookingFor, SeriesList* inSeriesList);
+    
     double distance(Series* a, Series* b);
+    double distance_w_optimisation_1(Series* a, Series* b);
 
 #ifdef __cplusplus
 }

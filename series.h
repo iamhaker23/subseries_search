@@ -44,7 +44,12 @@ extern "C" {
         struct _seriesListNode* next;
         struct _seriesListNode* previous;
         int index;
+        float distance;
+        char* asString;
     }SNode;
+    
+    
+    char* seriesAsString(Series* series, int fieldLength);
     
     typedef struct _seriesList{
         SNode* first;
@@ -62,12 +67,20 @@ extern "C" {
     
     SeriesList* newSeriesList();
     void appendToSeriesList(Series* series, SeriesList* seriesList);
+    void cacheSeries(Series* series, float distance, SeriesList* seriesList);
     
     void randomlyPopulateSeries(int n, Series* series);
     void randomlyPopulateSeriesList(int n, SeriesList* list);
     
     void printSeries(Series* series);
     void printSeriesList(SeriesList* list);
+    
+    int seriesListContains(SeriesList* list, Series* series);
+    
+    void freeSeriesList(SeriesList* list);
+    
+    SeriesList* getShortestDeltaSeries(SeriesList* cache, Series* givenSubSeries, Series* lookingFor);
+    
 
 #ifdef __cplusplus
 }

@@ -20,6 +20,7 @@ extern "C" {
 
     
     void doExperiment(int n, int k, FILE* log);
+    void doOptimisationComparison(int n, int k, FILE* log);
     void main();
 
 

@@ -4,7 +4,9 @@
  * and open the template in the editor.
  */
 
+#include <float.h>
 #include "series.h"
+#include "subseriesMatcher.h"
 
 int MAX_RANDOM_VALUE = 10000;
 
@@ -17,7 +19,8 @@ Element* getElement(int index, Series* series){
         }
         curr = curr->next;
     }
-    fprintf(stderr, "Fatal Error: not access index %d of series with length %d\n", index, series->length);
+    printSeries(series);
+    fprintf(stderr, "Fatal Error: could not access index %d of series with length %d\n", index, series->length);
     exit(EXIT_FAILURE);
     return NULL;
 }
@@ -32,7 +35,7 @@ SNode* getSNode(int index, SeriesList* seriesList){
         curr = curr->next;
     }
     
-    fprintf(stderr, "Fatal Error: not access index %d of series with length %d\n", index, seriesList->length);
+    fprintf(stderr, "Fatal Error: could not access index %d of series list with length %d\n", index, seriesList->length);
     exit(EXIT_FAILURE);
     return NULL;
 }
@@ -75,7 +78,7 @@ Series* sliceSeries(Series* series, int start, int end){
     //Note to self: always use newSeries instead of a straight-up malloc to avoid having random junk in the slice
     //That was 20 minutes well spent...
     Series* slice = newSeries();
-    if (series->length <= end || series->length <= start){
+    if (series->length < end || series->length < start){
         return slice;
     }
     Element* curr = series->first;
@@ -99,9 +102,29 @@ SeriesList* newSeriesList(){
     return newObj;
 }
 
+void freeSeriesList(SeriesList* list){
+    SNode* current = list->first;
+    while(current != NULL){
+        SNode* tmpSeries = current->next;
+        Element* currentElement = current->series->first;
+        while(currentElement != NULL){
+            Element* tmp = currentElement->next;
+            free(currentElement);
+            currentElement = tmp;
+        }
+        free(current);
+        current = tmpSeries;
+    }
+}
+
 void appendToSeriesList(Series* series, SeriesList* seriesList){
+    cacheSeries(series, -1.0f, seriesList);
+}
+
+void cacheSeries(Series* series, float distance, SeriesList* seriesList){
     SNode* newObj = (SNode*)malloc(sizeof(SNode));
-    
+    newObj->distance = distance;
+    newObj->asString = seriesAsString(series, 4);
     newObj->series = series;
     if (seriesList->last == NULL){
         seriesList->last = newObj;
@@ -121,7 +144,7 @@ void appendToSeriesList(Series* series, SeriesList* seriesList){
     
     seriesList->length = (seriesList->length) + 1;
     
-}    
+}
 
 void randomlyPopulateSeries(int n, Series* series){
     int counter = n;
@@ -179,6 +202,32 @@ void printSeries(Series* series){
     }
     
     printf("%s\n", tmp);
+    free(tmp);
+}
+
+
+char* seriesAsString(Series* series, int fieldLength){
+    const int tmp_length = (series->length * (fieldLength+1)) + 2;
+    char* tmp = (char*)malloc(tmp_length);
+    
+    if (series->length == 0){
+        snprintf(tmp, tmp_length, "The list is empty.");
+
+    }else{
+        //initialise output buffer with an opening bracket
+        snprintf(tmp, tmp_length, "[");
+        //traverse inventory list (forward)
+        Element* current = series->first;
+        while(current != NULL){
+            
+            snprintf(tmp, tmp_length, (current->next==NULL) ?"%s%d" : "%s%d,", tmp, current->value);
+            current = current->next;
+        }
+        //Add closing bracket
+        snprintf(tmp,tmp_length, "%s]", tmp);
+    }
+    
+    return tmp;
 }
 
 void printSeriesList(SeriesList* list){
@@ -189,4 +238,72 @@ void printSeriesList(SeriesList* list){
         current=current->next;
     }
     printf("]\n");
+}
+
+int seriesListContains(SeriesList* list, Series* series){
+    SNode* currentSeries = list->first;
+    
+    while (currentSeries != NULL){
+        int counter = 0;
+        Element* currentElement = currentSeries->series->first;
+        
+        while(currentElement != NULL){
+            int correspondingValue = getElement(currentElement->index, series)->value;
+            if (currentElement->value != correspondingValue){
+                currentElement = NULL;
+            }else{
+                counter = counter + 1;
+                currentElement = currentElement->next;
+            }
+        }
+        if (counter == series->length){
+            return currentSeries->index;
+        }
+        currentSeries = currentSeries->next;
+    }
+    
+    return -1;
+}
+
+SeriesList* getShortestDeltaSeries(SeriesList* cache, Series* givenSubSeries, Series* lookingFor){
+    //output->first is delta series (with associated distance), output->last is delta target
+    float smallestDistance = FLT_MAX;
+    int indexOfClosest = -1;
+    
+    SeriesList* smallest = NULL;
+    
+    Series* deltaSeries = newSeries();
+    Series* deltaTarget = newSeries();
+    
+    //for each series in the cache
+    SNode* currentSeries = cache->first;
+    
+    while(currentSeries != NULL){
+        if (distance(givenSubSeries, currentSeries->series) < smallestDistance){
+            indexOfClosest = currentSeries->index;
+            smallestDistance = currentSeries->distance;
+        }
+        currentSeries = currentSeries->next;
+    }
+    
+    if (indexOfClosest == -1){
+        return smallest;
+    }else{
+        smallest = newSeriesList();
+        Element* currentElement = getSNode(indexOfClosest, cache)->series->first;
+        while(currentElement!= NULL){
+            
+            int correspondingValue = getElement(currentElement->index, givenSubSeries)->value;
+            if (currentElement->value != correspondingValue){
+                appendToSeries(correspondingValue, deltaSeries);
+                appendToSeries(getElement(currentElement->index, lookingFor)->value, deltaTarget);
+            }
+            
+            currentElement = currentElement->next;
+        }
+        appendToSeriesList(deltaSeries, smallest);
+        appendToSeriesList(deltaTarget, smallest);
+        return smallest;
+    }
+    
 }
